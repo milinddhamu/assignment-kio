@@ -11,19 +11,50 @@ import Paper from '@mui/material/Paper';
 import { BiSolidDoughnutChart } from 'react-icons/bi';
 import { RiTableLine } from 'react-icons/ri';
 import { useState } from "react";
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import SortButtons from "@/utils/SortButtons"
+
 function createData(campaigns, clicks, cost, conversions, revenue) {
   return { campaigns, clicks, cost, conversions, revenue };
 }
 
-const rows = [
-  createData('Male', 712, 23, 2344, 16568),
-  createData('Female', 237, 3961, 234234, 263293),
-  createData('Unknown', 262, 9462, 123, 234234),
-  createData('Total', 305, 2342, 23423, 2344),
-];
-
 const AdsChart = () => {
-  const [tableChartState , setTableChartState] = useState(true)
+  const [parent] = useAutoAnimate()
+  const [dataRows, setDataRows] = useState(() => {
+    const arr = [
+      createData('Male', 712, 23, 2344, 16568),
+      createData('Female', 237, 3961, 234234, 263293),
+      createData('Unknown', 262, 9462, 123, 234234),
+      createData('Total', 305, 2342, 23423, 2344),
+    ];
+    return arr;
+  });
+  const [tableChartState, setTableChartState] = useState(true);
+  const [sortOrder, setSortOrder] = useState('original');
+  const [sortBy, setSortBy] = useState('');
+  const originalRows = [...dataRows];
+
+  const toggleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'original' ? 'desc' : sortOrder === 'desc' ? 'asc' : 'original');
+    } else {
+      setSortBy(column)
+      setSortOrder("original")
+    }
+  };
+
+  const sortedRows = () => {
+    if (sortOrder == 'original') {
+      return originalRows;
+    } else {
+      const sortedArr = [...dataRows].slice().sort((a, b) => {
+        const sortOrderFactor = sortOrder === 'asc' ? 1 : -1;
+        return sortOrderFactor * (a[sortBy] - b[sortBy]);
+      });
+      return sortedArr
+    } 
+  };
+
   return (
     <div className="flex relative w-full min-h-[485px] bg-white" >
     <TableContainer className="border  rounded-[4px]">
@@ -38,16 +69,28 @@ const AdsChart = () => {
             </TableCell>
           </TableRow>
           {tableChartState && <TableRow>
-            <TableCell>Groups</TableCell>
-            <TableCell align="right">Clicks</TableCell>
-            <TableCell align="right">Cost</TableCell>
-            <TableCell align="right">Conversions</TableCell>
-            <TableCell align="right">Revenue</TableCell>
-          </TableRow>}
+                <TableCell>Groups</TableCell>
+                <TableCell align="right">
+                  <div className="flex flex-row justify-end items-center w-full">Clicks
+                  <button 
+                  onClick={() => toggleSort('clicks')}
+                  className="flex flex-col -my-1 ml-2"><SortButtons state={sortOrder} columnState={sortBy} columnId="clicks"/></button></div>
+                  </TableCell>
+                <TableCell align="right"><div className="flex flex-row items-center justify-end">Cost<button 
+                onClick={() => toggleSort('cost')}
+                className="flex flex-col -my-1 ml-2"><SortButtons state={sortOrder} columnState={sortBy} columnId="cost" /></button></div></TableCell>
+                <TableCell align="right"><div className="flex flex-row items-center justify-end ">Conversions<button 
+                onClick={() => toggleSort('conversions')}
+                className="flex flex-col -my-1 ml-2"><SortButtons state={sortOrder} columnState={sortBy} columnId="conversions" /></button></div></TableCell>
+                <TableCell align="right"><div className="flex flex-row items-center justify-end ">Revenue<button 
+                className="flex flex-col -my-1 ml-2"
+                onClick={() => toggleSort('revenue')}
+                ><SortButtons state={sortOrder} columnState={sortBy} columnId="revenue" /></button></div></TableCell>
+              </TableRow>}
         </TableHead>
           {tableChartState ? <>
-            <TableBody style={{minWidth:"100%"}}>
-            {rows.map((row) => (
+            <TableBody style={{minWidth:"100%"}} ref={parent}>
+            {sortedRows().map((row) => (
             <TableRow
               key={row.name}
               sx={{ '&:last-child': {backgroundColor:"#00000005 !important"} }}
